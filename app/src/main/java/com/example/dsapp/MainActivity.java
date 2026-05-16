@@ -8,6 +8,7 @@ import shared.Game;
 import shared.Player;
 
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 import java.util.List;
 
@@ -15,7 +16,8 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ScrollView;
-import android.widget.TextView;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -38,7 +40,8 @@ public class MainActivity extends AppCompatActivity {
     boolean isDarkMode = true;
     ScrollView mainLayout;
     RecyclerView recyclerView;
-
+    Spinner starsSpinner, riskSpinner, betSpinner;
+    TextView starsLabel, riskLabel, betLabel;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,8 +60,60 @@ public class MainActivity extends AppCompatActivity {
         searchButton = findViewById(R.id.searchButton);
         changeLight = findViewById(R.id.changeLight);
         mainLayout = findViewById(R.id.mainLayout);
+        starsSpinner = findViewById(R.id.starsSpinner);
+        riskSpinner = findViewById(R.id.riskSpinner);
+        betSpinner = findViewById(R.id.betSpinner);
 
-        changeLight.setOnClickListener(v -> {
+        starsLabel = findViewById(R.id.starsLabel);
+        riskLabel = findViewById(R.id.riskLabel);
+        betLabel = findViewById(R.id.betLabel);
+
+
+        setupSpinners();
+
+
+        /*String[] starsOptions = {"Any", "1", "2", "3", "4", "5"};
+
+        ArrayAdapter<String> starsAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        R.layout.spinner_item,
+                        starsOptions
+                );
+        starsAdapter.setDropDownViewResource(R.layout.spinner_item);
+
+        starsSpinner.setAdapter(starsAdapter);
+
+        riskSpinner = findViewById(R.id.riskSpinner);
+        String[] riskOptions = {"Any", "low", "medium", "high"};
+
+        ArrayAdapter<String> riskAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        R.layout.spinner_item,
+                        riskOptions
+                );
+        riskAdapter.setDropDownViewResource(R.layout.spinner_item);
+
+        riskSpinner.setAdapter(riskAdapter);
+
+        betSpinner = findViewById(R.id.betSpinner);
+        String[] betOptions = {"Any", "low", "medium", "high"};
+
+        ArrayAdapter<String> betAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        R.layout.spinner_item,
+                        betOptions
+                );
+        betAdapter.setDropDownViewResource(R.layout.spinner_item);
+
+        betSpinner.setAdapter(betAdapter); */
+
+        changeLight.setOnClickListener(v -> { //extra feature gia dokimi
+            int starsPosition = starsSpinner.getSelectedItemPosition();
+            int riskPosition = riskSpinner.getSelectedItemPosition();
+            int betPosition = betSpinner.getSelectedItemPosition();
 
             if (isDarkMode) {
                 // Light mode
@@ -66,6 +121,9 @@ public class MainActivity extends AppCompatActivity {
                 playerIdInput.setTextColor(LIGHT_TEXT);
                 playerIdInput.setHintTextColor(0xFF666666);
                 changeLight.setText("Dark Mode");
+                starsLabel.setTextColor(LIGHT_TEXT);
+                riskLabel.setTextColor(LIGHT_TEXT);
+                betLabel.setTextColor(LIGHT_TEXT);
 
                 isDarkMode = false;
 
@@ -75,9 +133,17 @@ public class MainActivity extends AppCompatActivity {
                 playerIdInput.setTextColor(DARK_TEXT);
                 playerIdInput.setHintTextColor(0xFFAAAAAA);
                 changeLight.setText("Light Mode");
+                starsLabel.setTextColor(DARK_TEXT);
+                riskLabel.setTextColor(DARK_TEXT);
+                betLabel.setTextColor(DARK_TEXT);
 
                 isDarkMode = true;
             }
+            setupSpinners();
+
+            starsSpinner.setSelection(starsPosition);
+            riskSpinner.setSelection(riskPosition);
+            betSpinner.setSelection(betPosition);
         });
 
         searchButton.setOnClickListener(v -> {
@@ -93,14 +159,44 @@ public class MainActivity extends AppCompatActivity {
                     Player player = new Player(playerId, 0.0);
                     NetworkClient.sendRequest(new PlayerRequest("ADD_PLAYER", player, 0.0));
 
-                    Filters filters = new Filters(player.getPlayerId(), 1, null,null);
+                    String selectedStars =
+                            starsSpinner.getSelectedItem().toString();
+
+                    String selectedRisk =
+                            riskSpinner.getSelectedItem().toString();
+
+                    String selectedBet =
+                            betSpinner.getSelectedItem().toString();
+
+                    int stars =
+                            selectedStars.equals("Any")
+                                    ? 0
+                                    : Integer.parseInt(selectedStars);
+
+                    String risk =
+                            selectedRisk.equals("Any")
+                                    ? null
+                                    : selectedRisk;
+
+                    String bet =
+                            selectedBet.equals("Any")
+                                    ? null
+                                    : selectedBet;
+
+                    Filters filters =
+                            new Filters(
+                                    player.getPlayerId(),
+                                    stars,
+                                    risk,
+                                    bet
+                            );
                     Object resp = NetworkClient.sendRequest(new SearchGamesRequest(filters));
 
                     if (resp instanceof SearchGamesResponse) {
                         List<Game> games = ((SearchGamesResponse) resp).getGames();
 
                         runOnUiThread(() -> {
-                            GameAdapter adapter = new GameAdapter(games); //emfanizei ta diathesima games
+                            GameAdapter adapter = new GameAdapter(MainActivity.this, games, player);//emfanizei ta diathesima games
                             recyclerView.setAdapter(adapter);
                         });
 
@@ -124,5 +220,56 @@ public class MainActivity extends AppCompatActivity {
                 }
             }).start();
         });
+    }
+    private void setupSpinners() {
+
+        int spinnerLayout;
+
+        if (isDarkMode) {
+            spinnerLayout = R.layout.spinner_item;
+        } else {
+            spinnerLayout = R.layout.spinner_item_light;
+        }
+
+        String[] starsOptions = {"Any", "1", "2", "3", "4", "5"};
+
+        ArrayAdapter<String> starsAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        spinnerLayout,
+                        starsOptions
+                );
+
+        starsAdapter.setDropDownViewResource(spinnerLayout);
+
+        starsSpinner.setAdapter(starsAdapter);
+
+
+        String[] riskOptions = {"Any", "low", "medium", "high"};
+
+        ArrayAdapter<String> riskAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        spinnerLayout,
+                        riskOptions
+                );
+
+        riskAdapter.setDropDownViewResource(spinnerLayout);
+
+        riskSpinner.setAdapter(riskAdapter);
+
+
+        String[] betOptions = {"Any", "low", "medium", "high"};
+
+        ArrayAdapter<String> betAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        spinnerLayout,
+                        betOptions
+                );
+
+        betAdapter.setDropDownViewResource(spinnerLayout);
+
+        betSpinner.setAdapter(betAdapter);
     }
 }

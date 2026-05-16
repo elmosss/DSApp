@@ -9,19 +9,16 @@ public class NetworkClient {
     public static final int PORT = 4321;
 
     public static Object sendRequest(Object request) throws Exception {
-        Socket sock = new Socket(HOST, PORT);
+        try (Socket sock = new Socket(HOST, PORT);  //sindesi me tcp socket ston master
+             ObjectOutputStream out = new ObjectOutputStream(sock.getOutputStream());
+             ObjectInputStream in = new ObjectInputStream(sock.getInputStream())) {
 
-        ObjectOutputStream out = new ObjectOutputStream(sock.getOutputStream());
-        out.flush();
+            out.flush();
 
-        ObjectInputStream in = new ObjectInputStream(sock.getInputStream());
+            out.writeObject(request);
+            out.flush();
 
-        out.writeObject(request);
-        out.flush();
-
-        Object resp = in.readObject();
-        sock.close();
-
-        return resp;
+            return in.readObject();
+        }
     }
 }
